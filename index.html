@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Bingo Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1e2632 0%, #2a3342 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: white;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .title-container {
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .title-container h1 {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .title-container h1:hover {
+            background: rgba(231, 79, 38, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .title-container h1.editing {
+            background: rgba(231, 79, 38, 0.15);
+            border: 2px dashed #e74f26;
+        }
+
+        .title-input {
+            font-size: 1em;
+            font-weight: bold;
+            text-align: center;
+            background: transparent;
+            border: none;
+            color: #e74f26;
+            width: 100%;
+            max-width: 600px;
+            outline: none;
+            font-family: inherit;
+            margin: 0 auto;
+        }
+
+        .title-input::placeholder {
+            color: rgba(231, 79, 38, 0.5);
+        }
+
+        .title-instructions {
+            font-size: 0.8em;
+            color: #a0a0d0;
+            margin-top: 5px;
+            opacity: 0.8;
+        }
+
+        .subtitle {
+            margin-bottom: 30px;
+            opacity: 0.9;
+            font-size: 1.1em;
+            color: #a0a0d0;
+        }
+
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 30px auto;
+            max-width: 600px;
+        }
+
+        .bingo-cell {
+            aspect-ratio: 2/3;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.3s ease;
+            border: 2px dashed rgba(255, 255, 255, 0.15);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bingo-cell:hover {
+            transform: translateY(-5px);
+            border-color: #e74f26;
+            box-shadow: 0 10px 30px rgba(231, 79, 38, 0.2);
+            background: rgba(231, 79, 38, 0.05);
+        }
+
+        .bingo-cell.selected {
+            border-color: #e74f26;
+            border-style: solid;
+            box-shadow: 0 0 20px rgba(231, 79, 38, 0.3);
+        }
+
+        .bingo-cell.book-added {
+            border-style: solid;
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .bingo-cell .book-cover {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            border-radius: 8px;
+        }
+
+        .bingo-cell .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.5);
+            padding: 20px;
+        }
+
+        .bingo-cell .placeholder-icon {
+            font-size: 2em;
+            opacity: 0.3;
+        }
+
+        .bingo-cell.has-book .placeholder {
+            display: none;
+        }
+
+        .bingo-cell.has-book .book-cover {
+            display: block;
+        }
+
+        .bingo-cell .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(30, 38, 50, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            z-index: 2;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(231, 79, 38, 0.3);
+        }
+
+        .bingo-cell.has-book:hover .remove-btn {
+            display: flex;
+        }
+
+        .bingo-cell .remove-btn:hover {
+            background: #e74f26;
+            transform: scale(1.1);
+        }
+
+        .controls {
+            margin-top: 40px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #2a3342, #1e2632);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            border: 1px solid rgba(231, 79, 38, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 79, 38, 0.3);
+            border-color: #e74f26;
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #e74f26, #d84315);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .generate-btn:hover {
+            background: linear-gradient(135deg, #ff5c33, #e74f26);
+            box-shadow: 0 6px 20px rgba(231, 79, 38, 0.4);
+        }
+
+        .generate-btn.generating {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            transform: scale(0.98);
+        }
+
+        .state-indicator {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            height: 24px;
+            color: #a0a0d0;
+        }
+
+        .state-indicator::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: #e74f26;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .preview-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview-section.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        .bingo-preview {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            display: inline-block;
+            max-width: 100%;
+            border: 1px solid rgba(231, 79, 38, 0.2);
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 5px;
+            width: 500px;
+            max-width: 100%;
+        }
+
+        .preview-cell {
+            aspect-ratio: 2/3;
+            overflow: hidden;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .preview-cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .download-btn {
+            margin-top: 15px;
+            background: linear-gradient(135deg, #2a3342, #1e2632);
+            border: 1px solid rgba(231, 79, 38, 0.5);
+        }
+
+        .download-btn:hover {
+            background: linear-gradient(135deg, #e74f26, #d84315);
+            border-color: #e74f26;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .title-input {
+                font-size: 2em;
+            }
+            
+            .bingo-grid {
+                gap: 10px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+            
+            .preview-grid {
+                width: 100%;
+                gap: 3px;
+            }
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: left;
+            border-left: 4px solid #e74f26;
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e74f26;
+        }
+
+        .instructions p {
+            margin-bottom: 8px;
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .instructions ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .instructions li {
+            margin-bottom: 5px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .drop-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(30, 38, 50, 0.95);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            font-size: 2em;
+            color: #e74f26;
+            flex-direction: column;
+            gap: 20px;
+            border: 3px dashed #e74f26;
+        }
+
+        .drop-overlay.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .title-edit-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(231, 79, 38, 0.1);
+            border: 1px solid rgba(231, 79, 38, 0.3);
+            color: #e74f26;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.8em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: none;
+        }
+
+        .title-container:hover .title-edit-btn {
+            display: block;
+        }
+
+        .title-edit-btn:hover {
+            background: rgba(231, 79, 38, 0.2);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="drop-overlay" id="dropOverlay">
+        <div>📚 Drop Book Cover Here!</div>
+        <div style="font-size: 1rem; opacity: 0.8; color: #a0a0d0;">Release to add to selected square</div>
+    </div>
+
+    <div class="container">
+        <div class="title-container" id="titleContainer">
+            <button class="title-edit-btn" onclick="startTitleEdit()">✏️ Edit Title</button>
+            <h1 id="pageTitle" onclick="startTitleEdit()">
+                📚 My Book Bingo
+            </h1>
+            <div class="title-instructions">Click title to personalize (e.g., "Zoe's Bingo Card")</div>
+        </div>
+        
+        <p class="subtitle">Create your personalized book bingo card with actual book covers</p>
+        
+        <div class="instructions">
+            <h3>🎯 How to Play Book Bingo</h3>
+            <ul>
+                <li><strong>Click any square</strong> to select it (border turns orange)</li>
+                <li><strong>Drag & drop a book cover image</strong> or paste from clipboard</li>
+                <li><strong>Personalize your title</strong> by clicking it above</li>
+                <li><strong>Generate & share</strong> your completed bingo card</li>
+            </ul>
+        </div>
+        
+        <div class="bingo-grid" id="bingoGrid"></div>
+        
+        <div class="controls">
+            <button onclick="clearAllBooks()">
+                <span>🗑️</span> Clear All Books
+            </button>
+            <button onclick="generateBingoCard()" class="generate-btn" id="generateBtn">
+                <span>🖼️</span> Generate Bingo Card
+            </button>
+        </div>
+        
+        <div class="state-indicator" id="stateIndicator">Ready to add books</div>
+        
+        <div class="preview-section" id="previewSection">
+            <h3 style="color: #e74f26;">Your Book Bingo Card Preview</h3>
+            <div class="bingo-preview">
+                <div class="preview-grid" id="previewGrid"></div>
+            </div>
+            <button onclick="downloadBingoCard()" class="download-btn">
+                <span>⬇️</span> Download as Image
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Constants
+        const BOARD_SIZE = 5;
+        const STORAGE_KEY = 'bookBingoBoard';
+        const TITLE_KEY = 'bingoCardTitle';
+        const COMPANY_COLORS = {
+            primary: '#e74f26',
+            secondary: '#1e2632',
+            dark: '#2a3342'
+        };
+        
+        let boardState = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+        let selectedCellIndex = null;
+        let dropOverlay = document.getElementById('dropOverlay');
+        let isEditingTitle = false;
+
+        // Initialize the board
+        function initBoard() {
+            const grid = document.getElementById('bingoGrid');
+            grid.innerHTML = '';
+            
+            // Load saved title
+            const savedTitle = localStorage.getItem(TITLE_KEY);
+            if (savedTitle) {
+                document.getElementById('pageTitle').innerHTML = savedTitle;
+            }
+            
+            // Load saved state
+            const savedState = localStorage.getItem(STORAGE_KEY);
+            if (savedState) {
+                try {
+                    const parsed = JSON.parse(savedState);
+                    boardState = parsed.map(item => item ? {
+                        dataUrl: item.dataUrl,
+                        fileName: item.fileName || 'book-cover.jpg'
+                    } : null);
+                } catch (e) {
+                    boardState = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+                }
+            }
+            
+            // Create grid cells
+            for (let i = 0; i < BOARD_SIZE * BOARD_SIZE; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'bingo-cell';
+                cell.dataset.index = i;
+                
+                // Placeholder content
+                const placeholder = document.createElement('div');
+                placeholder.className = 'placeholder';
+                placeholder.innerHTML = `
+                    <div class="placeholder-icon">📚</div>
+                `;
+                
+                // Book cover image
+                const img = document.createElement('img');
+                img.className = 'book-cover';
+                img.alt = 'Book cover';
+                
+                // Remove button
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.innerHTML = '×';
+                removeBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    removeBook(i);
+                };
+                
+                // Click handler
+                cell.onclick = () => selectCell(i);
+                
+                // Drag and drop events
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                    cell.addEventListener(eventName, handleDragDrop);
+                });
+                
+                cell.appendChild(placeholder);
+                cell.appendChild(img);
+                cell.appendChild(removeBtn);
+                grid.appendChild(cell);
+                
+                // Load existing book cover
+                if (boardState[i]) {
+                    loadBookIntoCell(i, boardState[i].dataUrl);
+                }
+            }
+            
+            // Setup global paste listener
+            document.addEventListener('paste', handlePaste);
+            
+            // Setup global drag and drop
+            document.addEventListener('dragenter', showDropOverlay);
+            document.addEventListener('dragleave', (e) => {
+                if (e.clientX <= 0 || e.clientY <= 0 || 
+                    e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
+                    hideDropOverlay();
+                }
+            });
+            document.addEventListener('dragover', (e) => e.preventDefault());
+            document.addEventListener('drop', (e) => {
+                e.preventDefault();
+                hideDropOverlay();
+                if (selectedCellIndex !== null) {
+                    handleFileDrop(e.dataTransfer.files[0], selectedCellIndex);
+                }
+            });
+            
+            // Setup title edit listener
+            document.addEventListener('click', (e) => {
+                if (isEditingTitle && !e.target.closest('.title-container')) {
+                    saveTitleEdit();
+                }
+            });
+            
+            showStateIndicator('Ready! Click a square to add a book cover');
+        }
+
+        // Start editing title
+        function startTitleEdit() {
+            if (isEditingTitle) return;
+            
+            const titleElement = document.getElementById('pageTitle');
+            const currentTitle = titleElement.textContent.replace(/\s+/g, ' ').trim();
+            const titleContainer = document.getElementById('titleContainer');
+            
+            titleContainer.classList.add('editing');
+            
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'title-input';
+            input.value = currentTitle;
+            input.placeholder = "Enter your bingo card title...";
+            input.maxLength = 50;
+            
+            input.onkeydown = (e) => {
+                if (e.key === 'Enter') {
+                    saveTitleEdit();
+                } else if (e.key === 'Escape') {
+                    cancelTitleEdit();
+                }
+            };
+            
+            input.onblur = () => {
+                setTimeout(saveTitleEdit, 100);
+            };
+            
+            titleElement.innerHTML = '';
+            titleElement.appendChild(input);
+            input.focus();
+            input.select();
+            
+            isEditingTitle = true;
+        }
+
+        // Save title edit
+        function saveTitleEdit() {
+            if (!isEditingTitle) return;
+            
+            const input = document.querySelector('.title-input');
+            const titleContainer = document.getElementById('titleContainer');
+            const titleElement = document.getElementById('pageTitle');
+            
+            let newTitle = input.value.trim();
+            if (newTitle === '') {
+                newTitle = '📚 My Book Bingo';
+            }
+            
+            // Add emoji if not present
+            if (!newTitle.includes('📚') && !newTitle.includes('🎯')) {
+                newTitle = '📚 ' + newTitle;
+            }
+            
+            titleElement.innerHTML = newTitle;
+            titleContainer.classList.remove('editing');
+            
+            // Save to localStorage
+            localStorage.setItem(TITLE_KEY, newTitle);
+            
+            isEditingTitle = false;
+            showStateIndicator('Title updated!');
+        }
+
+        // Cancel title edit
+        function cancelTitleEdit() {
+            if (!isEditingTitle) return;
+            
+            const titleContainer = document.getElementById('titleContainer');
+            const titleElement = document.getElementById('pageTitle');
+            const savedTitle = localStorage.getItem(TITLE_KEY) || '📚 My Book Bingo';
+            
+            titleElement.innerHTML = savedTitle;
+            titleContainer.classList.remove('editing');
+            
+            isEditingTitle = false;
+        }
+
+        // Select a cell
+        function selectCell(index) {
+            // Deselect previous cell
+            if (selectedCellIndex !== null) {
+                const prevCell = document.querySelector(`.bingo-cell[data-index="${selectedCellIndex}"]`);
+                prevCell.classList.remove('selected');
+            }
+            
+            // Select new cell
+            selectedCellIndex = index;
+            const cell = document.querySelector(`.bingo-cell[data-index="${index}"]`);
+            cell.classList.add('selected');
+            
+            showStateIndicator(`Square ${Math.floor(index/5)+1}-${(index%5)+1} selected. Drop or paste a book cover!`);
+        }
+
+        // Handle drag and drop events
+        function handleDragDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (e.type === 'dragenter' || e.type === 'dragover') {
+                this.style.borderColor = COMPANY_COLORS.primary;
+                this.style.background = `rgba(${parseInt(COMPANY_COLORS.primary.slice(1, 3), 16)}, ${parseInt(COMPANY_COLORS.primary.slice(3, 5), 16)}, ${parseInt(COMPANY_COLORS.primary.slice(5, 7), 16)}, 0.1)`;
+            } else if (e.type === 'dragleave') {
+                this.style.borderColor = '';
+                this.style.background = '';
+            } else if (e.type === 'drop') {
+                this.style.borderColor = '';
+                this.style.background = '';
+                const index = parseInt(this.dataset.index);
+                selectCell(index);
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleFileDrop(files[0], index);
+                }
+            }
+        }
+
+        // Show drop overlay
+        function showDropOverlay(e) {
+            if (e.dataTransfer.types.includes('Files')) {
+                dropOverlay.classList.add('active');
+            }
+        }
+
+        // Hide drop overlay
+        function hideDropOverlay() {
+            dropOverlay.classList.remove('active');
+        }
+
+        // Handle paste from clipboard
+        function handlePaste(e) {
+            if (selectedCellIndex === null) return;
+            
+            const items = e.clipboardData.items;
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    handleFileDrop(file, selectedCellIndex);
+                    e.preventDefault();
+                    break;
+                }
+            }
+        }
+
+        // Handle file drop
+        function handleFileDrop(file, index) {
+            if (!file || !file.type.match('image.*')) {
+                showStateIndicator('Please drop an image file (JPEG, PNG, etc.)');
+                return;
+            }
+            
+            if (file.size > 5 * 1024 * 1024) {
+                showStateIndicator('Image too large! Please use images under 5MB');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                loadBookIntoCell(index, e.target.result, file.name);
+                showStateIndicator(`Book cover added to square ${Math.floor(index/5)+1}-${(index%5)+1}`);
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Load book into cell
+        function loadBookIntoCell(index, dataUrl, fileName = 'book-cover.jpg') {
+            const cell = document.querySelector(`.bingo-cell[data-index="${index}"]`);
+            const img = cell.querySelector('.book-cover');
+            
+            // Create a new image to ensure it's loaded
+            const tempImg = new Image();
+            tempImg.onload = () => {
+                img.src = dataUrl;
+                cell.classList.add('has-book', 'book-added');
+                boardState[index] = {
+                    dataUrl: dataUrl,
+                    fileName: fileName
+                };
+                saveState();
+            };
+            tempImg.src = dataUrl;
+        }
+
+        // Remove book from cell
+        function removeBook(index) {
+            const cell = document.querySelector(`.bingo-cell[data-index="${index}"]`);
+            const img = cell.querySelector('.book-cover');
+            img.src = '';
+            cell.classList.remove('has-book', 'book-added');
+            boardState[index] = null;
+            saveState();
+            showStateIndicator('Book removed');
+        }
+
+        // Clear all books
+        function clearAllBooks() {
+            if (confirm('Are you sure you want to remove all book covers?')) {
+                boardState = Array(BOARD_SIZE * BOARD_SIZE).fill(null);
+                document.querySelectorAll('.bingo-cell').forEach(cell => {
+                    const img = cell.querySelector('.book-cover');
+                    img.src = '';
+                    cell.classList.remove('has-book', 'book-added');
+                });
+                saveState();
+                showStateIndicator('All books cleared');
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(boardState));
+        }
+
+        // Show state indicator
+        function showStateIndicator(message) {
+            const indicator = document.getElementById('stateIndicator');
+            indicator.textContent = message;
+            indicator.style.opacity = '1';
+            
+            setTimeout(() => {
+                indicator.style.opacity = '0.8';
+            }, 3000);
+        }
+
+        // Generate the bingo card image
+        async function generateBingoCard() {
+            const generateBtn = document.getElementById('generateBtn');
+            const originalText = generateBtn.innerHTML;
+            
+            // Count books
+            const bookCount = boardState.filter(book => book !== null).length;
+            if (bookCount === 0) {
+                showStateIndicator('Add some books first!');
+                return;
+            }
+            
+            generateBtn.innerHTML = '<span>⏳</span> Generating...';
+            generateBtn.classList.add('generating');
+            
+            try {
+                // Create canvas for the grid
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Canvas dimensions
+                const cellWidth = 200;
+                const cellHeight = 300;
+                const gap = 10;
+                const padding = 40;
+                
+                const totalWidth = (cellWidth * BOARD_SIZE) + (gap * (BOARD_SIZE - 1)) + (padding * 2);
+                const totalHeight = (cellHeight * BOARD_SIZE) + (gap * (BOARD_SIZE - 1)) + (padding * 2);
+                
+                canvas.width = totalWidth;
+                canvas.height = totalHeight;
+                
+                // Draw background with company colors
+                const gradient = ctx.createLinearGradient(0, 0, totalWidth, totalHeight);
+                gradient.addColorStop(0, COMPANY_COLORS.secondary);
+                gradient.addColorStop(1, COMPANY_COLORS.dark);
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, totalWidth, totalHeight);
+                
+                // Draw grid background
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.fillRect(padding - 10, padding - 10, 
+                            totalWidth - (padding - 10) * 2, 
+                            totalHeight - (padding - 10) * 2);
+                
+                // Get title
+                const title = document.getElementById('pageTitle').textContent;
+                
+                // Draw cells
+                const promises = [];
+
+                for (let row = 0; row < BOARD_SIZE; row++) {
+                    for (let col = 0; col < BOARD_SIZE; col++) {
+                        const index = row * BOARD_SIZE + col;
+                        const x = padding + col * (cellWidth + gap);
+                        const y = padding + row * (cellHeight + gap);
+                        
+                        // Draw cell background
+                        ctx.fillStyle = boardState[index] ? 'rgba(0, 0, 0, 0.3)' : 'rgba(255, 255, 255, 0.05)';
+                        ctx.fillRect(x, y, cellWidth, cellHeight);
+                        
+                        // Draw border
+                        ctx.strokeStyle = boardState[index] ? COMPANY_COLORS.dark : 'rgba(255, 255, 255, 0.1)';
+                        ctx.lineWidth = boardState[index] ? 3 : 1;
+                        ctx.strokeRect(x, y, cellWidth, cellHeight);
+                        
+                        if (boardState[index]) {
+                            // Create and push promise for book cover drawing
+                            const coverPromise = drawBookCover(ctx, boardState[index].dataUrl, x, y, cellWidth, cellHeight)
+                                .catch(error => {
+                                    console.error(`Error drawing cover at [${row},${col}]:`, error);
+                                    drawPlaceholderCover(ctx, x, y, cellWidth, cellHeight);
+                                });
+                            promises.push(coverPromise);
+                        } else {
+                            // Draw placeholder with company colors
+                            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                            ctx.font = '30px Arial';
+                            ctx.textAlign = 'center';
+                            ctx.textBaseline = 'middle';
+                            ctx.fillText('📚', x + cellWidth/2, y + cellHeight/2);
+                        }
+                    }
+                }
+
+                // Wait for ALL promises to complete, not just resolve
+                try {
+                    await Promise.allSettled(promises);
+                } catch (error) {
+                    console.error('Error in image processing:', error);
+                    // Continue anyway - we have placeholders for failed images
+                }
+                
+                // Draw title with company colors
+                ctx.fillStyle = COMPANY_COLORS.primary;
+                ctx.font = 'bold 40px Arial';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                ctx.shadowBlur = 10;
+                ctx.fillText(title, totalWidth/2, 30);
+                ctx.shadowBlur = 0;
+                
+                // Draw subtitle
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.font = 'italic 20px Arial';
+                ctx.fillText(new Date().toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                }), totalWidth/2, totalHeight - 20);
+                
+                // Update preview
+                updatePreview(canvas.toDataURL('image/jpeg', 0.95));
+                
+                generateBtn.innerHTML = '<span>✅</span> Generated!';
+                showStateIndicator('Bingo card generated! Download or share it.');
+                
+                setTimeout(() => {
+                    generateBtn.innerHTML = originalText;
+                    generateBtn.classList.remove('generating');
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error generating bingo card:', error);
+                generateBtn.innerHTML = originalText;
+                generateBtn.classList.remove('generating');
+                showStateIndicator('Error generating card. Please try again.');
+            }
+        }
+
+        // Replace the drawBookCover function with this improved version:
+        function drawBookCover(ctx, dataUrl, x, y, width, height) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = 'anonymous'; // Handle CORS if needed
+                
+                img.onload = () => {
+                    try {
+                        // Create a temporary canvas to ensure consistent cropping
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        
+                        // Set temp canvas to the exact size we need for the cover
+                        const padding = 10;
+                        const coverWidth = width - padding * 2;
+                        const coverHeight = height - padding * 2;
+                        
+                        tempCanvas.width = coverWidth;
+                        tempCanvas.height = coverHeight;
+                        
+                        // Fill white background
+                        tempCtx.fillStyle = 'white';
+                        tempCtx.fillRect(0, 0, coverWidth, coverHeight);
+                        
+                        // Calculate dimensions to fill the cover area completely
+                        // This ensures consistent cropping across all book covers
+                        const imgRatio = img.width / img.height;
+                        const coverRatio = coverWidth / coverHeight;
+                        
+                        let sourceX = 0;
+                        let sourceY = 0;
+                        let sourceWidth = img.width;
+                        let sourceHeight = img.height;
+                        
+                        // Calculate crop to fill the cover area
+                        if (imgRatio > coverRatio) {
+                            // Image is wider than cover area - crop sides
+                            sourceHeight = img.height;
+                            sourceWidth = sourceHeight * coverRatio;
+                            sourceX = (img.width - sourceWidth) / 2;
+                        } else {
+                            // Image is taller than cover area - crop top/bottom
+                            sourceWidth = img.width;
+                            sourceHeight = sourceWidth / coverRatio;
+                            sourceY = (img.height - sourceHeight) / 2;
+                        }
+                        
+                        // Draw the cropped image to fill the temp canvas
+                        tempCtx.drawImage(
+                            img,
+                            sourceX, sourceY, sourceWidth, sourceHeight, // Source (cropped)
+                            0, 0, coverWidth, coverHeight // Destination (full cover)
+                        );
+                        
+                        // Now draw the processed cover onto the main canvas
+                        const coverX = x + padding;
+                        const coverY = y + padding;
+                        
+                        // Draw white background for cover
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(coverX, coverY, coverWidth, coverHeight);
+                        
+                        // Draw the processed cover image
+                        ctx.drawImage(tempCanvas, coverX, coverY);
+                        
+                        // Draw subtle shadow with company color
+                        ctx.strokeStyle = COMPANY_COLORS.primary + '40';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(coverX, coverY, coverWidth, coverHeight);
+                        
+                        resolve();
+                    } catch (error) {
+                        console.error('Error drawing book cover:', error);
+                        // Draw placeholder if image fails
+                        drawPlaceholderCover(ctx, x, y, width, height);
+                        resolve();
+                    }
+                };
+                
+                img.onerror = (error) => {
+                    console.error('Error loading image:', error);
+                    // Draw placeholder if image fails to load
+                    drawPlaceholderCover(ctx, x, y, width, height);
+                    resolve();
+                };
+                
+                img.src = dataUrl;
+                
+                // Set a timeout to prevent hanging
+                setTimeout(() => {
+                    if (!img.complete) {
+                        console.warn('Image load timeout, using placeholder');
+                        drawPlaceholderCover(ctx, x, y, width, height);
+                        resolve();
+                    }
+                }, 5000);
+            });
+        }
+
+        // Helper function to draw placeholder cover
+        function drawPlaceholderCover(ctx, x, y, width, height) {
+            const padding = 10;
+            const coverX = x + padding;
+            const coverY = y + padding;
+            const coverWidth = width - padding * 2;
+            const coverHeight = height - padding * 2;
+            
+            // Draw white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(coverX, coverY, coverWidth, coverHeight);
+            
+            // Draw placeholder icon
+            ctx.fillStyle = COMPANY_COLORS.primary + '80';
+            ctx.font = '40px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('📚', coverX + coverWidth/2, coverY + coverHeight/2);
+            
+            // Draw border
+            ctx.strokeStyle = COMPANY_COLORS.primary + '40';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(coverX, coverY, coverWidth, coverHeight);
+        }
+
+        // Update preview
+        function updatePreview(dataUrl) {
+            const previewSection = document.getElementById('previewSection');
+            const previewGrid = document.getElementById('previewGrid');
+            
+            // Create preview image
+            previewGrid.innerHTML = '';
+            const previewImg = document.createElement('img');
+            previewImg.src = dataUrl;
+            previewImg.style.width = '100%';
+            previewImg.style.borderRadius = '5px';
+            previewGrid.appendChild(previewImg);
+            
+            // Store the data URL for download
+            previewGrid.dataset.imageUrl = dataUrl;
+            
+            // Show preview section
+            previewSection.classList.add('active');
+        }
+
+        // Download bingo card
+        function downloadBingoCard() {
+            const previewGrid = document.getElementById('previewGrid');
+            const dataUrl = previewGrid.dataset.imageUrl;
+            
+            if (!dataUrl) {
+                showStateIndicator('Please generate a bingo card first');
+                return;
+            }
+            
+            // Get title for filename
+            const title = document.getElementById('pageTitle').textContent
+                .replace(/[^\w\s]/gi, '') // Remove emojis and special chars
+                .trim()
+                .replace(/\s+/g, '-') // Replace spaces with dashes
+                .toLowerCase();
+            
+            const filename = title || 'book-bingo';
+            
+            const link = document.createElement('a');
+            link.download = `${filename}-${new Date().toISOString().slice(0, 10)}.jpg`;
+            link.href = dataUrl;
+            link.click();
+            
+            showStateIndicator('Bingo card downloaded!');
+        }
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', initBoard);
+    </script>
+</body>
+</html>
