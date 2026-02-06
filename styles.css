@@ -122,7 +122,6 @@ body {
     height: 100%;
     object-fit: cover;
     display: none;
-    border-radius: 8px;
     transition: all 0.3s ease;
 }
 
